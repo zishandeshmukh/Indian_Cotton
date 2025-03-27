@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "pkief.material-icon-theme",
+    "ms-vscode.vscode-typescript-next",
+    "ckolkman.vscode-postgres",
+    "mikestead.dotenv",
+    "johnsoncodehk.volar",
+    "streetsidesoftware.code-spell-checker",
+    "formulahendry.auto-rename-tag",
+    "johnpapa.vscode-peacock",
+    "prisma.prisma"
+  ]
+}

@@ -1,0 +1,98 @@
+[
+  {
+    "id": 1,
+    "name": "Royal Silk Lehenga Fabric",
+    "description": "Premium silk fabric for lehenga, perfect for weddings and special occasions.",
+    "price": 49900,
+    "image_url": "https://images.unsplash.com/photo-1596942517067-59ecf323f71c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "category": "lehenga",
+    "stock": 23,
+    "is_featured": true,
+    "is_active": true,
+    "sku": "FB-LS-001"
+  },
+  {
+    "id": 2,
+    "name": "Premium Cotton Frock Fabric",
+    "description": "Soft cotton fabric ideal for children's frocks and casual wear.",
+    "price": 34900,
+    "image_url": "https://images.unsplash.com/photo-1604917621956-10dfa7cce2e7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "category": "frock",
+    "stock": 45,
+    "is_featured": false,
+    "is_active": true,
+    "sku": "FB-FR-002"
+  },
+  {
+    "id": 3,
+    "name": "Handloom Kurta Fabric",
+    "description": "Traditional handloom fabric perfect for ethnic kurtas.",
+    "price": 59900,
+    "image_url": "https://images.unsplash.com/photo-1589891685388-c9038979ed0b?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "category": "kurta",
+    "stock": 12,
+    "is_featured": false,
+    "is_active": true,
+    "sku": "FB-KR-003"
+  },
+  {
+    "id": 4,
+    "name": "Embroidered Net Fabric",
+    "description": "Delicate net fabric with beautiful embroidery for overlays and decorative purposes.",
+    "price": 79900,
+    "image_url": "https://images.unsplash.com/photo-1595515106883-5fedd5a53110?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "category": "net",
+    "stock": 35,
+    "is_featured": false,
+    "is_active": true,
+    "sku": "FB-NT-004"
+  },
+  {
+    "id": 5,
+    "name": "Designer Cut Piece",
+    "description": "Pre-cut fabric piece ready for specific garment patterns.",
+    "price": 29900,
+    "image_url": "https://images.unsplash.com/photo-1558304970-abd589baebe5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "category": "cutpiece",
+    "stock": 20,
+    "is_featured": false,
+    "is_active": true,
+    "sku": "FB-CP-005"
+  },
+  {
+    "id": 6,
+    "name": "Bridal Lehenga Fabric",
+    "description": "Luxury fabric for bridal lehengas with intricate embellishments.",
+    "price": 129900,
+    "image_url": "https://images.unsplash.com/photo-1606603696914-2c60681ef707?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "category": "lehenga",
+    "stock": 8,
+    "is_featured": true,
+    "is_active": true,
+    "sku": "FB-LS-006"
+  },
+  {
+    "id": 7,
+    "name": "Linen Kurta Fabric",
+    "description": "Breathable linen fabric perfect for summer kurtas.",
+    "price": 49900,
+    "image_url": "https://images.unsplash.com/photo-1549349807-34dfcbe3ed16?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "category": "kurta",
+    "stock": 30,
+    "is_featured": false,
+    "is_active": true,
+    "sku": "FB-KR-007"
+  },
+  {
+    "id": 8,
+    "name": "Designer Frock Material",
+    "description": "Premium material for designer frocks with unique patterns.",
+    "price": 39900,
+    "image_url": "https://images.unsplash.com/photo-1574201635302-388dd92a4c3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80",
+    "category": "frock",
+    "stock": 18,
+    "is_featured": false,
+    "is_active": true,
+    "sku": "FB-FR-008"
+  }
+]

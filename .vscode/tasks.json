@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "dev:client",
+      "problemMatcher": [],
+      "label": "npm: dev:client",
+      "detail": "Start Vite development server",
+      "isBackground": true
+    },
+    {
+      "type": "npm",
+      "script": "db:push",
+      "problemMatcher": [],
+      "label": "npm: db:push",
+      "detail": "Push database schema changes"
+    },
+    {
+      "type": "shell",
+      "label": "Create Database",
+      "command": "psql -U postgres -f ${workspaceFolder}/scripts/create-database.sql",
+      "problemMatcher": []
+    }
+  ]
+}

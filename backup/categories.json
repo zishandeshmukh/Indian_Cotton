@@ -1,0 +1,32 @@
+[
+  {
+    "id": 4,
+    "name": "net",
+    "description": "Transparent, delicate fabrics used for overlays and decorative purposes",
+    "product_count": 1
+  },
+  {
+    "id": 5,
+    "name": "cutpiece",
+    "description": "Pre-cut fabric pieces ready for specific garment patterns",
+    "product_count": 1
+  },
+  {
+    "id": 2,
+    "name": "lehenga",
+    "description": "Traditional Indian clothing for women, often worn during weddings and festivals",
+    "product_count": 2
+  },
+  {
+    "id": 3,
+    "name": "kurta",
+    "description": "Traditional Indian clothing materials for men and women",
+    "product_count": 2
+  },
+  {
+    "id": 1,
+    "name": "frock",
+    "description": "Casual and formal dress materials for children and women",
+    "product_count": 2
+  }
+]
