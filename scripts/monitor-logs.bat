@@ -1,0 +1,3 @@
+@echo off
+echo Starting log monitoring...
+node scripts/monitor-logs.js

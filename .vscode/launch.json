@@ -4,66 +4,29 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Server",
+      "name": "Debug Server",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
       "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/node_modules/tsx/dist/cli.mjs",
-      "args": ["${workspaceFolder}/server/index.ts"],
-      "outFiles": ["${workspaceFolder}/**/*.js"],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "envFile": "${workspaceFolder}/.env"
+      "internalConsoleOptions": "neverOpen"
     },
     {
-      "type": "node",
+      "type": "chrome",
       "request": "launch",
-      "name": "Export Database",
-      "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/scripts/export-data.js",
-      "outFiles": ["${workspaceFolder}/**/*.js"],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "envFile": "${workspaceFolder}/.env"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Import Database",
-      "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/scripts/import-data.js",
-      "outFiles": ["${workspaceFolder}/**/*.js"],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "envFile": "${workspaceFolder}/.env"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Monitor Logs",
-      "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/scripts/monitor-logs.js",
-      "outFiles": ["${workspaceFolder}/**/*.js"],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "envFile": "${workspaceFolder}/.env"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Setup Local",
-      "skipFiles": ["<node_internals>/**"],
-      "program": "${workspaceFolder}/scripts/setup-local.js",
-      "outFiles": ["${workspaceFolder}/**/*.js"],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "envFile": "${workspaceFolder}/.env"
+      "name": "Debug Client",
+      "url": "http://localhost:5000",
+      "webRoot": "${workspaceFolder}/client",
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/src/*"
+      }
     }
   ],
   "compounds": [
     {
-      "name": "Full Stack",
-      "configurations": ["Launch Server"],
-      "preLaunchTask": "npm: dev:client",
-      "stopAll": true
+      "name": "Debug Full Stack",
+      "configurations": ["Debug Server", "Debug Client"]
     }
   ]
 }

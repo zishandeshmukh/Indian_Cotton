@@ -1,20 +1,22 @@
--- Create fabric shop database
+-- Database creation script for Fabric Shop
+
+-- Create the database if it doesn't exist
 CREATE DATABASE fabricshop;
 
 -- Connect to the database
 \c fabricshop
 
--- Create necessary extensions
+-- Create extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create category enum type
+-- Create category_enum
 DO $$ BEGIN
   CREATE TYPE category_enum AS ENUM ('frock', 'lehenga', 'kurta', 'net', 'cutpiece');
 EXCEPTION
   WHEN duplicate_object THEN null;
 END $$;
 
--- Create products table
+-- Create tables
 CREATE TABLE IF NOT EXISTS products (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
@@ -29,7 +31,6 @@ CREATE TABLE IF NOT EXISTS products (
   sku TEXT NOT NULL
 );
 
--- Create categories table
 CREATE TABLE IF NOT EXISTS categories (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
@@ -37,7 +38,6 @@ CREATE TABLE IF NOT EXISTS categories (
   product_count INTEGER DEFAULT 0
 );
 
--- Create cart items table
 CREATE TABLE IF NOT EXISTS cart_items (
   id SERIAL PRIMARY KEY,
   cart_id TEXT NOT NULL,
@@ -46,7 +46,6 @@ CREATE TABLE IF NOT EXISTS cart_items (
   FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
 );
 
--- Create admins table
 CREATE TABLE IF NOT EXISTS admins (
   id SERIAL PRIMARY KEY,
   username TEXT NOT NULL UNIQUE,
@@ -54,11 +53,6 @@ CREATE TABLE IF NOT EXISTS admins (
   email TEXT,
   role TEXT DEFAULT 'user'
 );
-
--- Insert default admin user
-INSERT INTO admins (username, password, email, role)
-VALUES ('admin', 'admin123', 'deshmukhzishan06@gmail.com', 'admin')
-ON CONFLICT (username) DO NOTHING;
 
 -- Insert default categories
 INSERT INTO categories (name, description)
@@ -70,7 +64,10 @@ VALUES
   ('cutpiece', 'Pre-cut fabric pieces ready for specific garment patterns')
 ON CONFLICT (name) DO NOTHING;
 
--- Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE fabricshop TO current_user;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO current_user;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO current_user;
+-- Insert default admin
+INSERT INTO admins (username, password, email, role)
+VALUES ('admin', 'admin123', 'deshmukhzishan06@gmail.com', 'admin')
+ON CONFLICT (username) DO NOTHING;
+
+-- Notify completion
+\echo 'Database setup completed successfully!'

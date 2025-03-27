@@ -1,73 +1,108 @@
+#!/usr/bin/env node
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import pg from 'pg';
 import dotenv from 'dotenv';
+import pg from 'pg';
 
-// Load environment variables
-dotenv.config();
+const { Pool } = pg;
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const rootDir = path.join(__dirname, '..');
+const backupDir = path.join(rootDir, 'backup');
 
-// Create PostgreSQL connection pool
-const { Pool } = pg;
-const db = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+// Load environment variables
+console.log('📦 Loading environment variables...');
+dotenv.config({ path: path.join(rootDir, '.env') });
+
+// Create backup directory if it doesn't exist
+if (!fs.existsSync(backupDir)) {
+  fs.mkdirSync(backupDir, { recursive: true });
+}
 
 async function exportData() {
+  // Check required environment variables
+  const requiredVars = ['PGUSER', 'PGHOST', 'PGPASSWORD', 'PGDATABASE', 'PGPORT'];
+  const missingVars = requiredVars.filter(varName => !process.env[varName]);
+
+  if (missingVars.length > 0) {
+    console.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
+    console.log('\n💡 Your .env file should contain:');
+    console.log('DATABASE_URL=postgres://postgres:your_password@localhost:5432/fabricshop');
+    console.log('PGUSER=postgres');
+    console.log('PGHOST=localhost');
+    console.log('PGPASSWORD=your_password');
+    console.log('PGDATABASE=fabricshop');
+    console.log('PGPORT=5432');
+    process.exit(1);
+  }
+
+  // Create a new database pool
+  const pool = new Pool({
+    user: process.env.PGUSER,
+    host: process.env.PGHOST,
+    database: process.env.PGDATABASE,
+    password: process.env.PGPASSWORD,
+    port: parseInt(process.env.PGPORT || '5432'),
+  });
+
   try {
-    console.log('Starting data export...');
-    
-    // Create backup directory if it doesn't exist
-    const backupDir = path.join(__dirname, '..', 'backup');
-    if (!fs.existsSync(backupDir)) {
-      fs.mkdirSync(backupDir);
+    console.log('🔄 Connecting to the database...');
+    const client = await pool.connect();
+    console.log(`✅ Connected to database ${process.env.PGDATABASE}`);
+
+    // Get all table names from the database
+    const tableResult = await client.query(`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
+        AND table_type = 'BASE TABLE'
+    `);
+
+    const tables = tableResult.rows.map(row => row.table_name);
+    console.log(`📋 Found ${tables.length} tables: ${tables.join(', ')}`);
+
+    // Export data from each table
+    for (const table of tables) {
+      console.log(`🔄 Exporting data from ${table}...`);
+      
+      // Get all rows from the table
+      const result = await client.query(`SELECT * FROM ${table}`);
+      
+      // Write the data to a JSON file
+      const filePath = path.join(backupDir, `${table}.json`);
+      fs.writeFileSync(filePath, JSON.stringify(result.rows, null, 2));
+      
+      console.log(`✅ Exported ${result.rows.length} rows from ${table} to ${filePath}`);
     }
+
+    // Release the client back to the pool
+    client.release();
     
-    // Export admins
-    const admins = await db.query('SELECT * FROM admins');
-    fs.writeFileSync(
-      path.join(backupDir, 'admins.json'),
-      JSON.stringify(admins.rows, null, 2)
-    );
-    console.log(`Exported ${admins.rows.length} admins`);
+    console.log('\n🎉 Data export completed successfully.');
+    console.log(`📂 Backup files are stored in the '${backupDir}' directory.`);
     
-    // Export categories
-    const categories = await db.query('SELECT * FROM categories');
-    fs.writeFileSync(
-      path.join(backupDir, 'categories.json'),
-      JSON.stringify(categories.rows, null, 2)
-    );
-    console.log(`Exported ${categories.rows.length} categories`);
-    
-    // Export products
-    const products = await db.query('SELECT * FROM products');
-    fs.writeFileSync(
-      path.join(backupDir, 'products.json'),
-      JSON.stringify(products.rows, null, 2)
-    );
-    console.log(`Exported ${products.rows.length} products`);
-    
-    // Export cart_items
-    const cartItems = await db.query('SELECT * FROM cart_items');
-    fs.writeFileSync(
-      path.join(backupDir, 'cart_items.json'),
-      JSON.stringify(cartItems.rows, null, 2)
-    );
-    console.log(`Exported ${cartItems.rows.length} cart items`);
-    
-    console.log('Data export completed successfully!');
-    console.log(`Backup files are stored in: ${backupDir}`);
-    
+    return true;
   } catch (error) {
-    console.error('Error exporting data:', error);
+    console.error('❌ Error exporting data:', error);
+    return false;
   } finally {
-    await db.end();
+    // Close the pool
+    await pool.end();
   }
 }
 
-exportData();
+console.log('🚀 Starting data export...');
+exportData()
+  .then(success => {
+    if (!success) {
+      process.exit(1);
+    }
+  })
+  .catch(error => {
+    console.error('❌ Unhandled error:', error);
+    process.exit(1);
+  });

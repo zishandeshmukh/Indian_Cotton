@@ -76,16 +76,27 @@ A full-stack fabric e-commerce platform specializing in Indian textile sales, of
    npm install
    ```
 
-5. Create the PostgreSQL database:
-   ```bash
-   psql -U postgres -f scripts/create-database.sql
-   ```
-   or manually create a database named `fabricshop`.
+5. Initialize the PostgreSQL database (this will create the database if it doesn't exist):
+   - For Windows:
+     ```bash
+     scripts\init-database.bat
+     ```
+   - For Unix/Mac:
+     ```bash
+     node scripts/init-database.js
+     ```
 
-6. Initialize the database schema:
-   ```bash
-   npm run db:push
-   ```
+6. Push the Drizzle schema to the database:
+   - For Windows:
+     ```bash
+     scripts\db-push.bat
+     ```
+   - For Unix/Mac:
+     ```bash
+     node scripts/db-push.js
+     ```
+   
+   > **Note:** If you encounter issues with `npm run db:push`, use these scripts instead as they properly load environment variables.
 
 7. (Optional) Import sample data:
    ```bash
@@ -148,23 +159,48 @@ The application uses the following database tables:
 - `npm run db:push` - Push schema changes to the database
 
 ### Additional Useful Commands
-You can add these to your package.json scripts if needed:
+You can run these commands directly from the command line:
 
-```json
-"scripts": {
-  "dev:client": "vite",
-  "db:export": "node scripts/export-data.js",
-  "db:import": "node scripts/import-data.js",
-  "logs": "node scripts/monitor-logs.js",
-  "setup": "node scripts/setup-local.js"
-}
+```bash
+# Initialize the database (create database, tables, and default data)
+node scripts/init-database.js
+
+# Push Drizzle schema to the database
+node scripts/db-push.js
+
+# Export database content to JSON files in the backup directory
+node scripts/export-data.js
+
+# Import database content from JSON files in the backup directory
+node scripts/import-data.js
+
+# Run the application with colorized and formatted log output
+node scripts/monitor-logs.js
+
+# Interactive setup for local development environment
+node scripts/setup-local.js
 ```
 
-- `dev:client` - Start only the Vite frontend server
-- `db:export` - Export database content to JSON files
-- `db:import` - Import database content from JSON files
-- `logs` - Monitor and display application logs
-- `setup` - Run the local setup script
+For Windows users, batch files are available:
+```bash
+# Initialize the database
+scripts\init-database.bat
+
+# Push Drizzle schema to the database
+scripts\db-push.bat
+
+# Export database data to backup files
+scripts\export-data.bat
+
+# Import database data from backup files
+scripts\import-data.bat
+
+# Monitor application logs
+scripts\monitor-logs.bat
+
+# Interactive setup for local development environment
+scripts\setup-local.bat
+```
 
 ## Database Export and Import
 
