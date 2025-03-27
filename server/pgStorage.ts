@@ -18,6 +18,7 @@ export class PgStorage implements IStorage {
       description: row.description,
       price: row.price,
       imageUrl: row.image_url,
+      mediaFiles: row.media_files || [],
       category: row.category,
       stock: row.stock,
       isFeatured: row.is_featured,
@@ -37,6 +38,7 @@ export class PgStorage implements IStorage {
       description: row.description,
       price: row.price,
       imageUrl: row.image_url,
+      mediaFiles: row.media_files || [],
       category: row.category,
       stock: row.stock,
       isFeatured: row.is_featured,
@@ -53,6 +55,7 @@ export class PgStorage implements IStorage {
       description: row.description,
       price: row.price,
       imageUrl: row.image_url,
+      mediaFiles: row.media_files || [],
       category: row.category,
       stock: row.stock,
       isFeatured: row.is_featured,
@@ -74,6 +77,7 @@ export class PgStorage implements IStorage {
       description: row.description,
       price: row.price,
       imageUrl: row.image_url,
+      mediaFiles: row.media_files || [],
       category: row.category,
       stock: row.stock,
       isFeatured: row.is_featured,
@@ -89,6 +93,7 @@ export class PgStorage implements IStorage {
       description: product.description,
       price: product.price,
       imageUrl: product.imageUrl,
+      mediaFiles: product.mediaFiles || [],
       category: product.category,
       stock: product.stock || 0,
       isFeatured: product.isFeatured !== undefined ? product.isFeatured : false,
@@ -98,14 +103,15 @@ export class PgStorage implements IStorage {
     
     const result = await db.query(
       `INSERT INTO products 
-       (name, description, price, image_url, category, stock, is_featured, is_active, sku)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       (name, description, price, image_url, media_files, category, stock, is_featured, is_active, sku)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         productToInsert.name,
         productToInsert.description,
         productToInsert.price,
         productToInsert.imageUrl,
+        JSON.stringify(productToInsert.mediaFiles),
         productToInsert.category,
         productToInsert.stock,
         productToInsert.isFeatured,
@@ -127,6 +133,7 @@ export class PgStorage implements IStorage {
       description: row.description,
       price: row.price,
       imageUrl: row.image_url,
+      mediaFiles: row.media_files || [],
       category: row.category,
       stock: row.stock,
       isFeatured: row.is_featured,
@@ -203,6 +210,12 @@ export class PgStorage implements IStorage {
       paramIndex++;
     }
     
+    if (product.mediaFiles !== undefined) {
+      updates.push(`media_files = $${paramIndex}`);
+      values.push(JSON.stringify(product.mediaFiles));
+      paramIndex++;
+    }
+    
     // If no updates, return existing product
     if (updates.length === 0) {
       return {
@@ -211,6 +224,7 @@ export class PgStorage implements IStorage {
         description: existingProduct.description,
         price: existingProduct.price,
         imageUrl: existingProduct.image_url,
+        mediaFiles: existingProduct.media_files || [],
         category: existingProduct.category,
         stock: existingProduct.stock,
         isFeatured: existingProduct.is_featured,
@@ -250,6 +264,7 @@ export class PgStorage implements IStorage {
       description: row.description,
       price: row.price,
       imageUrl: row.image_url,
+      mediaFiles: row.media_files || [],
       category: row.category,
       stock: row.stock,
       isFeatured: row.is_featured,
@@ -385,6 +400,7 @@ export class PgStorage implements IStorage {
         description: row.description,
         price: row.price,
         imageUrl: row.image_url,
+        mediaFiles: row.media_files || [],
         category: row.category,
         stock: row.stock,
         isFeatured: row.is_featured,

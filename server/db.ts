@@ -50,6 +50,7 @@ export async function initDb() {
         description TEXT NOT NULL,
         price INTEGER NOT NULL,
         image_url TEXT NOT NULL,
+        media_files JSONB DEFAULT '[]' NOT NULL,
         category category_enum NOT NULL,
         stock INTEGER NOT NULL DEFAULT 0,
         is_featured BOOLEAN DEFAULT FALSE,

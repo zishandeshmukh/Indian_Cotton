@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, pgEnum, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -11,13 +11,20 @@ export const categoryEnum = pgEnum('category', [
   'cutpiece'
 ]);
 
+// Media type enum for product media
+export const mediaTypeEnum = pgEnum('media_type', [
+  'image',
+  'video'
+]);
+
 // Products table
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
   price: integer("price").notNull(), // price in cents
-  imageUrl: text("image_url").notNull(),
+  imageUrl: text("image_url").notNull(), // Main featured image URL
+  mediaFiles: jsonb("media_files").default([]).notNull(), // Array of additional media files
   category: categoryEnum("category").notNull(),
   stock: integer("stock").notNull().default(0),
   isFeatured: boolean("is_featured").default(false),
@@ -65,6 +72,15 @@ export type CartItem = typeof cartItems.$inferSelect;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
+
+// Define media file type
+export type MediaFile = {
+  id: string;
+  url: string;
+  type: 'image' | 'video';
+  title?: string;
+  isPrimary?: boolean;
+};
 
 // Additional types for application logic
 export type CartItemWithProduct = CartItem & {
