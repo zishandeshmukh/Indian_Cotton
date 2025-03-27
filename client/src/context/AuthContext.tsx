@@ -21,21 +21,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
   
   // Auth status query
+  interface AuthStatusResponse {
+    isAuthenticated: boolean;
+    isAdmin: boolean;
+    username: string | null;
+  }
+  
   const { 
     data: authData,
     isLoading,
     refetch: refetchAuth
-  } = useQuery({
+  } = useQuery<AuthStatusResponse>({
     queryKey: ['/api/auth/status'],
     retry: 1,
+    initialData: { isAuthenticated: false, isAdmin: false, username: null }
   });
   
   // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: (credentials: { username: string, password: string }) =>
-      apiRequest('POST', '/api/auth/login', credentials),
+  interface LoginResponse {
+    username: string;
+    isAdmin: boolean;
+  }
+  
+  const loginMutation = useMutation<Response, Error, { username: string, password: string }>({
+    mutationFn: (credentials) => apiRequest('POST', '/api/auth/login', credentials),
     onSuccess: async (res) => {
-      const data = await res.json();
+      const data = await res.json() as LoginResponse;
       setUsername(data.username);
       queryClient.invalidateQueries({ queryKey: ['/api/auth/status'] });
       
@@ -54,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   
   // Logout mutation
-  const logoutMutation = useMutation({
+  const logoutMutation = useMutation<Response, Error, void>({
     mutationFn: () => apiRequest('POST', '/api/auth/logout'),
     onSuccess: () => {
       setUsername(null);
