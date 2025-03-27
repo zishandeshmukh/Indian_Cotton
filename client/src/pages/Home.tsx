@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Product } from "@shared/schema";
+import { Product, Category } from "@shared/schema";
 import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/utils";
 import { useLocation } from "wouter";
@@ -18,13 +18,19 @@ export default function Home() {
   const categoryParam = params.get('category');
   
   // Get products
-  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery<Product[]>({
     queryKey: ['/api/products'],
+    retry: 3,
+    retryDelay: 1000,
+    networkMode: 'always',
   });
   
   // Get categories
-  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery<Category[]>({
     queryKey: ['/api/categories'],
+    retry: 3,
+    retryDelay: 1000,
+    networkMode: 'always',
   });
   
   // Set selected category from URL parameter
@@ -35,7 +41,7 @@ export default function Home() {
   }, [categoryParam]);
   
   // Filter products based on category and search term
-  const filteredProducts = products.filter((product: Product) => {
+  const filteredProducts = products.filter((product) => {
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -111,7 +117,7 @@ export default function Home() {
             All Fabrics
           </Button>
           
-          {!isLoadingCategories && categories.map((category) => (
+          {!isLoadingCategories && categories.map((category: Category) => (
             <Button
               key={category.id}
               variant={selectedCategory === category.name ? "default" : "outline"}
