@@ -73,7 +73,9 @@ export class MemStorage implements IStorage {
     // Initialize with default admin
     this.createAdmin({
       username: 'admin',
-      password: 'admin123'  // In a real app, this would be hashed
+      password: 'admin123',  // In a real app, this would be hashed
+      email: 'deshmukhzishan06@gmail.com',
+      role: 'admin'
     });
     
     // Initialize with sample products

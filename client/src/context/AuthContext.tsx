@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAdmin: boolean;
   username: string | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -40,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       toast({
         title: "Success",
-        description: "Logged in successfully",
+        description: data.isAdmin ? "Logged in as Admin" : "Logged in successfully",
       });
     },
     onError: (error: Error) => {
@@ -97,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const value = {
     isAuthenticated: !!authData?.isAuthenticated,
+    isAdmin: !!authData?.isAdmin,
     isLoading,
     username,
     login,

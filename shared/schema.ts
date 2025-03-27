@@ -46,6 +46,8 @@ export const admins = pgTable("admins", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  email: text("email"),
+  role: text("role").default("user"),
 });
 
 // Create Zod schemas for validation

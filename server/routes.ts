@@ -28,12 +28,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })
   );
 
-  // Middleware to check if user is authenticated
+  // Middleware to check if user is authenticated and is admin
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
     if (req.session && req.session.isAuthenticated) {
-      return next();
+      const username = req.session.username as string;
+      // Check if the user is the designated admin (with email deshmukhzishan06@gmail.com)
+      storage.getAdminByUsername(username).then(admin => {
+        if (admin && admin.email === 'deshmukhzishan06@gmail.com' && admin.role === 'admin') {
+          return next();
+        } else {
+          return res.status(403).json({ message: "Access forbidden. Admin privileges required." });
+        }
+      }).catch(error => {
+        return res.status(500).json({ message: "Error verifying admin status" });
+      });
+    } else {
+      return res.status(401).json({ message: "Unauthorized" });
     }
-    return res.status(401).json({ message: "Unauthorized" });
   };
 
   // Generate cart ID if not exists
@@ -369,8 +380,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set session
       req.session.isAuthenticated = true;
       req.session.username = admin.username;
+      
+      // Check if this is the admin user with special privileges
+      const isAdminUser = admin.email === 'deshmukhzishan06@gmail.com' && admin.role === 'admin';
 
-      res.json({ message: "Login successful", username: admin.username });
+      res.json({ 
+        message: "Login successful", 
+        username: admin.username,
+        isAdmin: isAdminUser 
+      });
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
     }
@@ -388,14 +406,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check authentication status
-  app.get("/api/auth/status", (req, res) => {
+  app.get("/api/auth/status", async (req, res) => {
     if (req.session && req.session.isAuthenticated) {
+      const username = req.session.username as string;
+      const admin = await storage.getAdminByUsername(username);
+      const isAdminUser = admin && admin.email === 'deshmukhzishan06@gmail.com' && admin.role === 'admin';
+      
       return res.json({ 
         isAuthenticated: true, 
-        username: req.session.username 
+        username: req.session.username,
+        isAdmin: isAdminUser
       });
     }
-    res.json({ isAuthenticated: false });
+    res.json({ isAuthenticated: false, isAdmin: false });
   });
 
   return httpServer;

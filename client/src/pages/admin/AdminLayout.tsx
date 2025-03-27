@@ -12,14 +12,14 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { isAuthenticated, logout, username } = useAuth();
+  const { isAuthenticated, isAdmin, logout, username } = useAuth();
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const isMobile = useMobile();
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
   
-  // If not authenticated, redirect to login
+  // If not authenticated or not admin, redirect appropriately
   useEffect(() => {
     if (!isAuthenticated) {
       toast({
@@ -28,8 +28,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         variant: "destructive",
       });
       navigate("/login");
+    } else if (!isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "You need administrator privileges to access this area",
+        variant: "destructive",
+      });
+      navigate("/");
     }
-  }, [isAuthenticated, navigate, toast]);
+  }, [isAuthenticated, isAdmin, navigate, toast]);
   
   // Toggle sidebar on mobile
   const toggleSidebar = () => {
@@ -53,8 +60,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return false;
   };
   
-  if (!isAuthenticated) {
-    return null; // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated || !isAdmin) {
+    return null; // Don't render anything if not authenticated or not admin (will redirect)
   }
   
   return (
