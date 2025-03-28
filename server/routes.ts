@@ -805,11 +805,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = await hashPassword(userData.password);
       
-      // Create user
+      // Create user with additional fields if provided
       const user = await storage.createUser({
         username: userData.username,
         email: userData.email,
         password: hashedPassword,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        phone: userData.phone,
       });
 
       // Set session for automatic login
@@ -1280,6 +1283,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Duplicate registration endpoint to handle both API paths
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      // Parse and validate the registration data
+      const userData = userRegisterSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Check if email already exists
+      if (userData.email) {
+        const existingEmail = await storage.getUserByEmail(userData.email);
+        if (existingEmail) {
+          return res.status(400).json({ message: "Email already in use" });
+        }
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(userData.password);
+      
+      // Create the user with hashed password
+      const user = await storage.createUser({
+        username: userData.username,
+        email: userData.email,
+        password: hashedPassword,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        phone: userData.phone,
+      });
+      
+      // Set session (auto-login after registration)
+      req.session.isAuthenticated = true;
+      req.session.username = user.username;
+      req.session.userId = user.id;
+      req.session.isAdmin = false;
+      
+      // Return user data (without password)
+      const { password, ...userWithoutPassword } = user;
+      res.status(201).json({
+        message: "Registration successful",
+        username: user.username,
+        isAdmin: false
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Invalid registration data",
+          errors: fromZodError(error).message,
+        });
+      }
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+  
   // Check authentication status
   app.get("/api/auth/status", async (req, res) => {
     if (req.session && req.session.isAuthenticated) {
