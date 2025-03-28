@@ -502,6 +502,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to upload file" });
     }
   });
+  
+  // Upload multiple files for a product (admin only)
+  app.post("/api/upload/product/:id/multiple", isAuthenticated, upload.array("files", 10), async (req, res) => {
+    try {
+      const productId = parseInt(req.params.id);
+      if (isNaN(productId)) {
+        return res.status(400).json({ message: "Invalid product ID" });
+      }
+
+      const product = await storage.getProductById(productId);
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: "No files uploaded" });
+      }
+
+      const uploadedFiles = [];
+
+      // Process each uploaded file
+      for (const file of files) {
+        // Determine file type from mimetype
+        let fileType = "image"; // Default to image
+        if (file.mimetype.startsWith("video/")) {
+          fileType = "video";
+        }
+
+        // Create file record
+        const fileData = {
+          filename: file.filename,
+          originalName: file.originalname,
+          mimeType: file.mimetype,
+          size: file.size,
+          path: file.path,
+          url: `/uploads/${file.filename}`,
+          productId: productId,
+          type: fileType as "image" | "video"
+        };
+
+        const uploadedFile = await storage.uploadFile(fileData);
+        uploadedFiles.push(uploadedFile);
+      }
+
+      res.status(201).json(uploadedFiles);
+    } catch (error) {
+      console.error("Multiple file upload error:", error);
+      res.status(500).json({ message: "Failed to upload files" });
+    }
+  });
 
   // Get files for a product
   app.get("/api/files/product/:id", async (req, res) => {

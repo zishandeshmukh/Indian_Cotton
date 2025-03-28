@@ -157,7 +157,10 @@ export default function Home() {
               data-category={product.category}
               data-name={product.name}
             >
-              <div className="relative">
+              <div 
+                className="relative cursor-pointer" 
+                onClick={() => setLocation(`/products/${product.id}`)}
+              >
                 <img 
                   src={product.imageUrl} 
                   alt={product.name} 
@@ -170,7 +173,12 @@ export default function Home() {
                 )}
               </div>
               <div className="p-4">
-                <h3 className="font-medium text-gray-800">{product.name}</h3>
+                <h3 
+                  className="font-medium text-gray-800 cursor-pointer hover:text-primary transition-colors" 
+                  onClick={() => setLocation(`/products/${product.id}`)}
+                >
+                  {product.name}
+                </h3>
                 <div className="flex items-center mt-1">
                   <span className="text-sm text-gray-500">
                     {product.category.charAt(0).toUpperCase() + product.category.slice(1)}
@@ -178,12 +186,27 @@ export default function Home() {
                 </div>
                 <div className="flex justify-between items-center mt-4">
                   <span className="font-bold text-lg">{formatCurrency(product.price)}</span>
-                  <Button
-                    size="sm"
-                    onClick={() => addToCart(product.id)}
-                  >
-                    Add to Cart
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocation(`/products/${product.id}`);
+                      }}
+                    >
+                      View
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(product.id);
+                      }}
+                    >
+                      Add to Cart
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

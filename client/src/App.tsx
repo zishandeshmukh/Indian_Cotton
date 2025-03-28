@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
+import ProductDetail from "@/pages/ProductDetail";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import Dashboard from "@/pages/admin/Dashboard";
 import Products from "@/pages/admin/Products";
@@ -25,6 +26,16 @@ function Router() {
         </Layout>
       )} />
       
+      <Route path="/products/:id" component={(params) => {
+        // Type assertion to access the id parameter
+        const id = (params as any).id;
+        return (
+          <Layout>
+            <ProductDetail id={parseInt(id)} />
+          </Layout>
+        );
+      }} />
+      
       {/* Auth routes */}
       <Route path="/login" component={Login} />
       
@@ -44,11 +55,14 @@ function Router() {
           <ProductForm />
         </AdminLayout>
       )} />
-      <Route path="/admin/products/:id/edit" component={(params) => (
-        <AdminLayout>
-          <ProductForm id={parseInt(params.id)} />
-        </AdminLayout>
-      )} />
+      <Route path="/admin/products/:id/edit" component={(params) => {
+        const id = (params as any).id;
+        return (
+          <AdminLayout>
+            <ProductForm id={parseInt(id)} />
+          </AdminLayout>
+        );
+      }} />
       <Route path="/admin/categories" component={() => (
         <AdminLayout>
           <Categories />
@@ -59,11 +73,14 @@ function Router() {
           <CategoryForm />
         </AdminLayout>
       )} />
-      <Route path="/admin/categories/:id/edit" component={(params) => (
-        <AdminLayout>
-          <CategoryForm id={parseInt(params.id)} />
-        </AdminLayout>
-      )} />
+      <Route path="/admin/categories/:id/edit" component={(params) => {
+        const id = (params as any).id;
+        return (
+          <AdminLayout>
+            <CategoryForm id={parseInt(id)} />
+          </AdminLayout>
+        );
+      }} />
       
       {/* 404 Fallback */}
       <Route component={NotFound} />
