@@ -3,10 +3,19 @@ import {
   CartItem, InsertCartItem,
   Category, InsertCategory,
   Admin, InsertAdmin,
-  CartItemWithProduct
+  User, InsertUser,
+  Order, InsertOrder,
+  OrderItem, InsertOrderItem,
+  UploadedFile, InsertUploadedFile,
+  CartItemWithProduct,
+  OrderWithItems,
+  ProductWithFiles
 } from "@shared/schema";
 import { IStorage } from "./storage";
 import { db } from "./db";
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
 
 export class PgStorage implements IStorage {
   // Product operations
@@ -513,5 +522,504 @@ export class PgStorage implements IStorage {
       email: row.email,
       role: row.role
     };
+  }
+  
+  // Product with files
+  async getProductWithFiles(id: number): Promise<ProductWithFiles | undefined> {
+    const product = await this.getProductById(id);
+    if (!product) return undefined;
+    
+    const files = await this.getFilesByProductId(id);
+    
+    return {
+      ...product,
+      uploadedFiles: files
+    };
+  }
+  
+  // User operations
+  async getUserById(id: number): Promise<User | undefined> {
+    const result = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+    if (result.rows.length === 0) return undefined;
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      username: row.username,
+      email: row.email,
+      password: row.password,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      phone: row.phone,
+      address: row.address,
+      city: row.city,
+      state: row.state,
+      zipCode: row.zip_code,
+      country: row.country,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+  
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
+    if (result.rows.length === 0) return undefined;
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      username: row.username,
+      email: row.email,
+      password: row.password,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      phone: row.phone,
+      address: row.address,
+      city: row.city,
+      state: row.state,
+      zipCode: row.zip_code,
+      country: row.country,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (result.rows.length === 0) return undefined;
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      username: row.username,
+      email: row.email,
+      password: row.password,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      phone: row.phone,
+      address: row.address,
+      city: row.city,
+      state: row.state,
+      zipCode: row.zip_code,
+      country: row.country,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+  
+  async createUser(user: InsertUser): Promise<User> {
+    const result = await db.query(
+      `INSERT INTO users (
+        username, email, password, first_name, last_name, 
+        phone, address, city, state, zip_code, country
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [
+        user.username,
+        user.email,
+        user.password,
+        user.firstName || null,
+        user.lastName || null,
+        user.phone || null,
+        user.address || null,
+        user.city || null,
+        user.state || null,
+        user.zipCode || null,
+        user.country || 'India'
+      ]
+    );
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      username: row.username,
+      email: row.email,
+      password: row.password,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      phone: row.phone,
+      address: row.address,
+      city: row.city,
+      state: row.state,
+      zipCode: row.zip_code,
+      country: row.country,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+  
+  async updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined> {
+    // Build dynamic update query
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+    
+    if (user.username !== undefined) {
+      updates.push(`username = $${paramIndex}`);
+      values.push(user.username);
+      paramIndex++;
+    }
+    
+    if (user.email !== undefined) {
+      updates.push(`email = $${paramIndex}`);
+      values.push(user.email);
+      paramIndex++;
+    }
+    
+    if (user.password !== undefined) {
+      updates.push(`password = $${paramIndex}`);
+      values.push(user.password);
+      paramIndex++;
+    }
+    
+    if (user.firstName !== undefined) {
+      updates.push(`first_name = $${paramIndex}`);
+      values.push(user.firstName);
+      paramIndex++;
+    }
+    
+    if (user.lastName !== undefined) {
+      updates.push(`last_name = $${paramIndex}`);
+      values.push(user.lastName);
+      paramIndex++;
+    }
+    
+    if (user.phone !== undefined) {
+      updates.push(`phone = $${paramIndex}`);
+      values.push(user.phone);
+      paramIndex++;
+    }
+    
+    if (user.address !== undefined) {
+      updates.push(`address = $${paramIndex}`);
+      values.push(user.address);
+      paramIndex++;
+    }
+    
+    if (user.city !== undefined) {
+      updates.push(`city = $${paramIndex}`);
+      values.push(user.city);
+      paramIndex++;
+    }
+    
+    if (user.state !== undefined) {
+      updates.push(`state = $${paramIndex}`);
+      values.push(user.state);
+      paramIndex++;
+    }
+    
+    if (user.zipCode !== undefined) {
+      updates.push(`zip_code = $${paramIndex}`);
+      values.push(user.zipCode);
+      paramIndex++;
+    }
+    
+    if (user.country !== undefined) {
+      updates.push(`country = $${paramIndex}`);
+      values.push(user.country);
+      paramIndex++;
+    }
+    
+    // Also update the updated_at timestamp
+    updates.push(`updated_at = NOW()`);
+    
+    // If no updates, return existing user
+    if (updates.length === 0) {
+      return this.getUserById(id);
+    }
+    
+    // Add id to values array
+    values.push(id);
+    
+    // Execute update
+    const result = await db.query(
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+      values
+    );
+    
+    if (result.rows.length === 0) return undefined;
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      username: row.username,
+      email: row.email,
+      password: row.password,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      phone: row.phone,
+      address: row.address,
+      city: row.city,
+      state: row.state,
+      zipCode: row.zip_code,
+      country: row.country,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+  
+  // Order operations
+  async getOrders(userId?: number): Promise<Order[]> {
+    let query = 'SELECT * FROM orders';
+    const params: any[] = [];
+    
+    if (userId) {
+      query += ' WHERE user_id = $1';
+      params.push(userId);
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    const result = await db.query(query, params);
+    
+    return result.rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      totalAmount: row.total_amount,
+      status: row.status,
+      paymentMethod: row.payment_method,
+      paymentStatus: row.payment_status,
+      shippingAddress: row.shipping_address,
+      shippingCity: row.shipping_city,
+      shippingState: row.shipping_state,
+      shippingZipCode: row.shipping_zip_code,
+      shippingCountry: row.shipping_country,
+      trackingNumber: row.tracking_number,
+      notes: row.notes,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+  }
+  
+  async getOrderById(id: number): Promise<Order | undefined> {
+    const result = await db.query('SELECT * FROM orders WHERE id = $1', [id]);
+    if (result.rows.length === 0) return undefined;
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      userId: row.user_id,
+      totalAmount: row.total_amount,
+      status: row.status,
+      paymentMethod: row.payment_method,
+      paymentStatus: row.payment_status,
+      shippingAddress: row.shipping_address,
+      shippingCity: row.shipping_city,
+      shippingState: row.shipping_state,
+      shippingZipCode: row.shipping_zip_code,
+      shippingCountry: row.shipping_country,
+      trackingNumber: row.tracking_number,
+      notes: row.notes,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+  
+  async getOrderWithItems(id: number): Promise<OrderWithItems | undefined> {
+    const order = await this.getOrderById(id);
+    if (!order) return undefined;
+    
+    const user = await this.getUserById(order.userId);
+    if (!user) return undefined;
+    
+    const result = await db.query(`
+      SELECT oi.*, p.*
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.id
+      WHERE oi.order_id = $1
+    `, [id]);
+    
+    const orderItems = result.rows.map(row => ({
+      id: row.id,
+      orderId: row.order_id,
+      productId: row.product_id,
+      quantity: row.quantity,
+      price: row.price,
+      createdAt: row.created_at,
+      product: {
+        id: row.product_id,
+        name: row.name,
+        description: row.description,
+        price: row.price,
+        imageUrl: row.image_url,
+        mediaFiles: row.media_files || [],
+        category: row.category,
+        stock: row.stock,
+        isFeatured: row.is_featured,
+        isActive: row.is_active,
+        sku: row.sku
+      }
+    }));
+    
+    return {
+      ...order,
+      orderItems,
+      user
+    };
+  }
+  
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const result = await db.query(
+      `INSERT INTO orders (
+        user_id, total_amount, status, payment_method, payment_status,
+        shipping_address, shipping_city, shipping_state, shipping_zip_code, 
+        shipping_country, tracking_number, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+      [
+        order.userId,
+        order.totalAmount,
+        order.status || 'pending',
+        order.paymentMethod || null,
+        order.paymentStatus || 'pending',
+        order.shippingAddress || null,
+        order.shippingCity || null,
+        order.shippingState || null,
+        order.shippingZipCode || null,
+        order.shippingCountry || 'India',
+        order.trackingNumber || null,
+        order.notes || null
+      ]
+    );
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      userId: row.user_id,
+      totalAmount: row.total_amount,
+      status: row.status,
+      paymentMethod: row.payment_method,
+      paymentStatus: row.payment_status,
+      shippingAddress: row.shipping_address,
+      shippingCity: row.shipping_city,
+      shippingState: row.shipping_state,
+      shippingZipCode: row.shipping_zip_code,
+      shippingCountry: row.shipping_country,
+      trackingNumber: row.tracking_number,
+      notes: row.notes,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+  
+  async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
+    const result = await db.query(
+      'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+    
+    if (result.rows.length === 0) return undefined;
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      userId: row.user_id,
+      totalAmount: row.total_amount,
+      status: row.status,
+      paymentMethod: row.payment_method,
+      paymentStatus: row.payment_status,
+      shippingAddress: row.shipping_address,
+      shippingCity: row.shipping_city,
+      shippingState: row.shipping_state,
+      shippingZipCode: row.shipping_zip_code,
+      shippingCountry: row.shipping_country,
+      trackingNumber: row.tracking_number,
+      notes: row.notes,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  }
+  
+  // Order Item operations
+  async addOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
+    const result = await db.query(
+      'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4) RETURNING *',
+      [orderItem.orderId, orderItem.productId, orderItem.quantity, orderItem.price]
+    );
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      orderId: row.order_id,
+      productId: row.product_id,
+      quantity: row.quantity,
+      price: row.price,
+      createdAt: row.created_at
+    };
+  }
+  
+  // File operations
+  async uploadFile(file: InsertUploadedFile): Promise<UploadedFile> {
+    const result = await db.query(
+      `INSERT INTO uploaded_files (
+        filename, original_name, mime_type, size, path, url, product_id, type
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [
+        file.filename,
+        file.originalName,
+        file.mimeType,
+        file.size,
+        file.path,
+        file.url,
+        file.productId || null,
+        file.type || 'image'
+      ]
+    );
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      filename: row.filename,
+      originalName: row.original_name,
+      mimeType: row.mime_type,
+      size: row.size,
+      path: row.path,
+      url: row.url,
+      productId: row.product_id,
+      type: row.type,
+      createdAt: row.created_at
+    };
+  }
+  
+  async getFilesByProductId(productId: number): Promise<UploadedFile[]> {
+    const result = await db.query(
+      'SELECT * FROM uploaded_files WHERE product_id = $1 ORDER BY created_at ASC',
+      [productId]
+    );
+    
+    return result.rows.map(row => ({
+      id: row.id,
+      filename: row.filename,
+      originalName: row.original_name,
+      mimeType: row.mime_type,
+      size: row.size,
+      path: row.path,
+      url: row.url,
+      productId: row.product_id,
+      type: row.type,
+      createdAt: row.created_at
+    }));
+  }
+  
+  async deleteFile(id: number): Promise<boolean> {
+    // Get file info before deleting
+    const fileResult = await db.query('SELECT * FROM uploaded_files WHERE id = $1', [id]);
+    if (fileResult.rows.length === 0) return false;
+    
+    const file = fileResult.rows[0];
+    
+    // Delete from database
+    const result = await db.query('DELETE FROM uploaded_files WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) return false;
+    
+    // Delete file from filesystem if it exists
+    try {
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      // Continue even if file deletion fails
+    }
+    
+    return true;
   }
 }

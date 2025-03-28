@@ -3,7 +3,13 @@ import {
   CartItem, InsertCartItem, 
   Category, InsertCategory,
   Admin, InsertAdmin,
-  CartItemWithProduct
+  User, InsertUser,
+  Order, InsertOrder,
+  OrderItem, InsertOrderItem,
+  UploadedFile, InsertUploadedFile,
+  CartItemWithProduct,
+  OrderWithItems,
+  ProductWithFiles
 } from "@shared/schema";
 
 export interface IStorage {
@@ -15,6 +21,7 @@ export interface IStorage {
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: number): Promise<boolean>;
+  getProductWithFiles(id: number): Promise<ProductWithFiles | undefined>;
   
   // Category operations
   getCategories(): Promise<Category[]>;
@@ -30,6 +37,28 @@ export interface IStorage {
   updateCartItem(id: number, quantity: number): Promise<CartItem | undefined>;
   removeFromCart(id: number): Promise<boolean>;
   clearCart(cartId: string): Promise<boolean>;
+  
+  // User operations
+  getUserById(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  
+  // Order operations
+  getOrders(userId?: number): Promise<Order[]>;
+  getOrderById(id: number): Promise<Order | undefined>;
+  getOrderWithItems(id: number): Promise<OrderWithItems | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrderStatus(id: number, status: string): Promise<Order | undefined>;
+  
+  // Order Item operations
+  addOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
+  
+  // File operations
+  uploadFile(file: InsertUploadedFile): Promise<UploadedFile>;
+  getFilesByProductId(productId: number): Promise<UploadedFile[]>;
+  deleteFile(id: number): Promise<boolean>;
   
   // Admin operations
   getAdminByUsername(username: string): Promise<Admin | undefined>;
