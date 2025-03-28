@@ -20,7 +20,7 @@ export default function Header() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Link href="/">
-                <span className="text-primary font-serif font-bold text-xl cursor-pointer">Fabric Haven</span>
+                <span className="text-primary font-serif font-bold text-xl cursor-pointer">Indian Cotton</span>
               </Link>
             </div>
           </div>
