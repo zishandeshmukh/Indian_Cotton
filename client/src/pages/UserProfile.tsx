@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation } from "wouter";
 import {
   Card,
   CardContent,
@@ -28,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Bell, Package, Truck, User, ShoppingBag, Edit } from "lucide-react";
 import Layout from "@/components/Layout";
+import { useAuth } from "@/context/AuthContext";
 
 // Define form validation schema
 const profileFormSchema = z.object({
@@ -99,6 +101,20 @@ export default function UserProfile() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  const { isAuthenticated, username } = useAuth();
+  const [, navigate] = useLocation();
+  
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to view your profile",
+        variant: "destructive",
+      });
+      navigate("/auth");
+    }
+  }, [isAuthenticated, navigate, toast]);
 
   // Setup form with default values
   const form = useForm<ProfileFormValues>({
@@ -118,39 +134,74 @@ export default function UserProfile() {
 
   // Fetch user profile data
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    if (isAuthenticated) {
       setIsLoading(true);
-      try {
-        const response = await apiRequest("GET", "/api/profile");
-        const data = await response.json();
-        setUserData(data);
-        
-        // Set form default values
-        form.reset({
-          firstName: data.firstName || "",
-          lastName: data.lastName || "",
-          email: data.email || "",
-          phone: data.phone || "",
-          address: data.address || "",
-          city: data.city || "",
-          state: data.state || "",
-          zipCode: data.zipCode || "",
-          country: data.country || "India",
-        });
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load user profile",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [form, toast]);
+      const fetchUserProfile = async () => {
+        try {
+          const response = await apiRequest("GET", "/api/users/me");
+          if (response.ok) {
+            const data = await response.json();
+            setUserData(data);
+            
+            // Set form default values
+            form.reset({
+              firstName: data.firstName || "",
+              lastName: data.lastName || "",
+              email: data.email || "",
+              phone: data.phone || "",
+              address: data.address || "",
+              city: data.city || "",
+              state: data.state || "",
+              zipCode: data.zipCode || "",
+              country: data.country || "India",
+            });
+          } else {
+            // If we couldn't get the user data, we can fallback to a minimal profile
+            // with just the username from auth context
+            setUserData({
+              id: 0, // We don't know the ID, but it's required by the type
+              username: username || "User",
+              email: "",
+              firstName: null,
+              lastName: null,
+              phone: null,
+              address: null,
+              city: null,
+              state: null,
+              zipCode: null,
+              country: "India",
+              profilePicture: null,
+              isEmailVerified: false,
+              isPhoneVerified: false
+            });
+            
+            form.reset({
+              firstName: "",
+              lastName: "",
+              email: "",
+              phone: "",
+              address: "",
+              city: "",
+              state: "",
+              zipCode: "",
+              country: "India",
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load user profile",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchUserProfile();
+    }
+  }, [isAuthenticated, username, form, toast]);
 
   // Fetch notifications
   useEffect(() => {

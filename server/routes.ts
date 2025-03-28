@@ -1227,6 +1227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Set session
         req.session.isAuthenticated = true;
         req.session.username = admin.username;
+        req.session.userId = admin.id; // Add this line to set userId for admin
         
         // Check if this is the admin user with special privileges
         const isAdminUser = admin.email === 'deshmukhzishan06@gmail.com' && admin.role === 'admin';
