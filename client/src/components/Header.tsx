@@ -64,6 +64,9 @@ export default function Header() {
             <div className="hidden md:block">
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
+                  <Link href="/profile">
+                    <Button variant="outline" size="sm">My Profile</Button>
+                  </Link>
                   <Link href="/admin">
                     <Button variant="outline" size="sm">Admin Panel</Button>
                   </Link>
@@ -136,9 +139,14 @@ export default function Header() {
               <a className="py-2 font-medium hover:text-primary">Contact</a>
             </Link>
             {isAuthenticated && (
-              <Link href="/admin">
-                <a className="py-2 font-medium hover:text-primary">Admin Panel</a>
-              </Link>
+              <>
+                <Link href="/profile">
+                  <a className="py-2 font-medium hover:text-primary">My Profile</a>
+                </Link>
+                <Link href="/admin">
+                  <a className="py-2 font-medium hover:text-primary">Admin Panel</a>
+                </Link>
+              </>
             )}
           </nav>
         </div>

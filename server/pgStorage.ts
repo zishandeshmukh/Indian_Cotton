@@ -7,6 +7,7 @@ import {
   Order, InsertOrder,
   OrderItem, InsertOrderItem,
   UploadedFile, InsertUploadedFile,
+  Notification, InsertNotification,
   CartItemWithProduct,
   OrderWithItems,
   ProductWithFiles
@@ -1021,5 +1022,111 @@ export class PgStorage implements IStorage {
     }
     
     return true;
+  }
+  
+  // Notification operations
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const result = await db.query(
+      `INSERT INTO notifications 
+       (user_id, type, title, message, is_read, related_entity_id, email_sent, sms_sent)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        notification.userId,
+        notification.type,
+        notification.title,
+        notification.message,
+        notification.isRead || false,
+        notification.relatedEntityId || null,
+        notification.emailSent || false,
+        notification.smsSent || false
+      ]
+    );
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      userId: row.user_id,
+      type: row.type,
+      title: row.title,
+      message: row.message,
+      isRead: row.is_read,
+      relatedEntityId: row.related_entity_id,
+      emailSent: row.email_sent,
+      smsSent: row.sms_sent,
+      createdAt: row.created_at
+    };
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    const result = await db.query('SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC', [userId]);
+    
+    return result.rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      type: row.type,
+      title: row.title,
+      message: row.message,
+      isRead: row.is_read,
+      relatedEntityId: row.related_entity_id,
+      emailSent: row.email_sent,
+      smsSent: row.sms_sent,
+      createdAt: row.created_at
+    }));
+  }
+  
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const result = await db.query('SELECT * FROM notifications WHERE id = $1', [id]);
+    if (result.rows.length === 0) return undefined;
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      userId: row.user_id,
+      type: row.type,
+      title: row.title,
+      message: row.message,
+      isRead: row.is_read,
+      relatedEntityId: row.related_entity_id,
+      emailSent: row.email_sent,
+      smsSent: row.sms_sent,
+      createdAt: row.created_at
+    };
+  }
+  
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    const result = await db.query(
+      'UPDATE notifications SET is_read = true WHERE id = $1 RETURNING *',
+      [id]
+    );
+    
+    if (result.rows.length === 0) return undefined;
+    
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      userId: row.user_id,
+      type: row.type,
+      title: row.title,
+      message: row.message,
+      isRead: row.is_read,
+      relatedEntityId: row.related_entity_id,
+      emailSent: row.email_sent,
+      smsSent: row.sms_sent,
+      createdAt: row.created_at
+    };
+  }
+  
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    await db.query(
+      'UPDATE notifications SET is_read = true WHERE user_id = $1',
+      [userId]
+    );
+    return true;
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    const result = await db.query('DELETE FROM notifications WHERE id = $1 RETURNING id', [id]);
+    return result.rows.length > 0;
   }
 }

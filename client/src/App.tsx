@@ -6,6 +6,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import AuthPage from "@/pages/AuthPage";
 import ProductDetail from "@/pages/ProductDetail";
+import UserProfile from "@/pages/UserProfile";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import Dashboard from "@/pages/admin/Dashboard";
 import Products from "@/pages/admin/Products";
@@ -35,6 +36,9 @@ function Router() {
           </Layout>
         );
       }} />
+      
+      {/* User Profile */}
+      <Route path="/profile" component={UserProfile} />
       
       {/* Auth routes */}
       <Route path="/auth" component={AuthPage} />

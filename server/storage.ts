@@ -7,6 +7,7 @@ import {
   Order, InsertOrder,
   OrderItem, InsertOrderItem,
   UploadedFile, InsertUploadedFile,
+  Notification, InsertNotification,
   CartItemWithProduct,
   OrderWithItems,
   ProductWithFiles
@@ -63,6 +64,14 @@ export interface IStorage {
   // Admin operations
   getAdminByUsername(username: string): Promise<Admin | undefined>;
   createAdmin(admin: InsertAdmin): Promise<Admin>;
+  
+  // Notification operations
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUserNotifications(userId: number): Promise<Notification[]>;
+  getNotification(id: number): Promise<Notification | undefined>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(userId: number): Promise<boolean>;
+  deleteNotification(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

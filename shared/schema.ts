@@ -67,6 +67,14 @@ export const categories = pgTable("categories", {
 });
 
 // Users table for customer accounts
+export const notificationTypeEnum = pgEnum('notification_type', [
+  'order_confirmation',
+  'shipping_update',
+  'delivery_confirmation',
+  'account_update',
+  'payment_confirmation'
+]);
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -80,13 +88,32 @@ export const users = pgTable("users", {
   state: text("state"),
   zipCode: text("zip_code"),
   country: text("country").default("India"),
+  profilePicture: text("profile_picture"),
+  isEmailVerified: boolean("is_email_verified").default(false),
+  isPhoneVerified: boolean("is_phone_verified").default(false),
+  preferences: jsonb("preferences").default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // User relations
+// Notifications table for user notifications (email/SMS)
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  type: notificationTypeEnum("type").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false),
+  relatedEntityId: integer("related_entity_id"), // Can be orderId or other entity
+  emailSent: boolean("email_sent").default(false),
+  smsSent: boolean("sms_sent").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   orders: many(orders),
+  notifications: many(notifications),
 }));
 
 // Orders table for tracking customer orders
@@ -230,6 +257,17 @@ export const checkoutSchema = z.object({
   paymentMethod: z.string().min(1, "Payment method is required"),
 });
 
+// Notifications relations
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+// Create insert schema for notifications
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+
 // Create types based on the schema
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
@@ -247,6 +285,8 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type UploadedFile = typeof uploadedFiles.$inferSelect;
 export type InsertUploadedFile = z.infer<typeof insertUploadedFileSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 // Define media file type
 export type MediaFile = {

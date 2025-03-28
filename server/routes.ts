@@ -8,9 +8,11 @@ import {
   insertUserSchema,
   insertOrderSchema,
   insertOrderItemSchema,
+  insertNotificationSchema,
   userLoginSchema,
   userRegisterSchema,
-  checkoutSchema
+  checkoutSchema,
+  notificationTypeEnum
 } from "@shared/schema";
 import { z } from "zod";
 import { ZodError } from "zod-validation-error";
@@ -608,6 +610,179 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // USER PROFILE AND NOTIFICATION ENDPOINTS
+  
+  // Get current user profile
+  app.get("/api/profile", async (req, res) => {
+    try {
+      if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const user = await storage.getUserById(req.session.userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Don't return password
+      const { password, ...userProfile } = user;
+      res.json(userProfile);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch user profile" });
+    }
+  });
+
+  // Update user profile
+  app.put("/api/profile", async (req, res) => {
+    try {
+      if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const userId = req.session.userId;
+      const profileData = insertUserSchema.partial().parse(req.body);
+      
+      // Don't allow password updates through this endpoint
+      if (profileData.password) {
+        delete profileData.password;
+      }
+      
+      const updatedUser = await storage.updateUser(userId, profileData);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Don't return password
+      const { password, ...userProfile } = updatedUser;
+      res.json(userProfile);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Invalid profile data",
+          errors: fromZodError(error).message,
+        });
+      }
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+  
+  // Update user profile picture
+  app.post("/api/profile/picture", upload.single("profilePicture"), async (req, res) => {
+    try {
+      if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const userId = req.session.userId;
+      const profilePicture = `/uploads/${req.file.filename}`;
+      
+      const updatedUser = await storage.updateUser(userId, { profilePicture });
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Don't return password
+      const { password, ...userProfile } = updatedUser;
+      res.json(userProfile);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update profile picture" });
+    }
+  });
+  
+  // Get notifications for current user
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const notifications = await storage.getUserNotifications(req.session.userId);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+  
+  // Mark a notification as read
+  app.put("/api/notifications/:id/read", async (req, res) => {
+    try {
+      if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid notification ID" });
+      }
+      
+      const notification = await storage.getNotification(id);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      // Ensure users can only mark their own notifications as read
+      if (notification.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const updatedNotification = await storage.markNotificationAsRead(id);
+      res.json(updatedNotification);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+  
+  // Mark all notifications as read
+  app.put("/api/notifications/read-all", async (req, res) => {
+    try {
+      if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      await storage.markAllNotificationsAsRead(req.session.userId);
+      res.json({ message: "All notifications marked as read" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to mark all notifications as read" });
+    }
+  });
+  
+  // Delete a notification
+  app.delete("/api/notifications/:id", async (req, res) => {
+    try {
+      if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid notification ID" });
+      }
+      
+      const notification = await storage.getNotification(id);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      // Ensure users can only delete their own notifications
+      if (notification.userId !== req.session.userId) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const success = await storage.deleteNotification(id);
+      if (!success) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      res.json({ message: "Notification deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete notification" });
+    }
+  });
+
   // USER MANAGEMENT ENDPOINTS
 
   // Register a new user
@@ -862,6 +1037,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clear cart
       await storage.clearCart(cartId);
       
+      // Create notification for order confirmation
+      await storage.createNotification({
+        userId: req.session.userId,
+        type: 'order_confirmation',
+        title: `Order #${order.id} Confirmation`,
+        message: `Your order for ₹${(totalAmount/100).toFixed(2)} has been placed successfully. You will receive shipping updates soon.`,
+        relatedEntityId: order.id,
+        isRead: false,
+        emailSent: false,
+        smsSent: false
+      });
+      
       res.status(201).json({ order, message: "Order placed successfully" });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -946,6 +1133,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
+      
+      // Create notification for status update
+      await storage.createNotification({
+        userId: order.userId,
+        type: 'shipping_update',
+        title: `Order #${order.id} Status Update`,
+        message: `Your order is now ${status.toUpperCase()}. ${
+          status === 'shipped' ? 'Your order is on its way!' : 
+          status === 'delivered' ? 'Your order has been delivered. Thank you for shopping with us!' :
+          status === 'cancelled' ? 'Your order has been cancelled. Please contact support for assistance.' :
+          ''
+        }`,
+        relatedEntityId: order.id,
+        isRead: false,
+        emailSent: false,
+        smsSent: false
+      });
       
       res.json(order);
     } catch (error) {
