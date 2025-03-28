@@ -14,6 +14,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { ZodError } from "zod-validation-error";
+import { fromZodError } from "zod-validation-error";
 import { randomUUID } from "crypto";
 import session from "express-session";
 import MemoryStore from "memorystore";
@@ -952,9 +953,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ADMIN AUTH ENDPOINTS
+  // AUTH ENDPOINTS
 
-  // Admin login
+  // User registration
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      // Parse and validate the registration data
+      const userData = userRegisterSchema.parse(req.body);
+      
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Check if email already exists
+      if (userData.email) {
+        const existingEmail = await storage.getUserByEmail(userData.email);
+        if (existingEmail) {
+          return res.status(400).json({ message: "Email already in use" });
+        }
+      }
+      
+      // Hash the password
+      const hashedPassword = await hashPassword(userData.password);
+      
+      // Create the user with hashed password
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword,
+      });
+      
+      // Set session (auto-login after registration)
+      req.session.isAuthenticated = true;
+      req.session.username = user.username;
+      req.session.userId = user.id;
+      req.session.isAdmin = false;
+      
+      // Return user data (without password)
+      const { password, ...userWithoutPassword } = user;
+      res.status(201).json({
+        message: "Registration successful",
+        username: user.username,
+        isAdmin: false
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Invalid registration data",
+          errors: fromZodError(error).message,
+        });
+      }
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  // User and admin login
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -962,24 +1017,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username and password are required" });
       }
 
+      // First check if it's an admin
       const admin = await storage.getAdminByUsername(username);
-      if (!admin || admin.password !== password) {
+      if (admin && admin.password === password) {
+        // Set session
+        req.session.isAuthenticated = true;
+        req.session.username = admin.username;
+        
+        // Check if this is the admin user with special privileges
+        const isAdminUser = admin.email === 'deshmukhzishan06@gmail.com' && admin.role === 'admin';
+        req.session.isAdmin = isAdminUser;
+
+        return res.json({ 
+          message: "Login successful", 
+          username: admin.username,
+          isAdmin: isAdminUser 
+        });
+      }
+
+      // If not admin, try regular user
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Check password
+      const passwordValid = await comparePasswords(password, user.password);
+      if (!passwordValid) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       // Set session
       req.session.isAuthenticated = true;
-      req.session.username = admin.username;
-      
-      // Check if this is the admin user with special privileges
-      const isAdminUser = admin.email === 'deshmukhzishan06@gmail.com' && admin.role === 'admin';
+      req.session.username = user.username;
+      req.session.userId = user.id;
+      req.session.isAdmin = false;
 
       res.json({ 
         message: "Login successful", 
-        username: admin.username,
-        isAdmin: isAdminUser 
+        username: user.username,
+        isAdmin: false
       });
     } catch (error) {
+      console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
     }
   });

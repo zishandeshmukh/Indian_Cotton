@@ -79,8 +79,8 @@ export default function Header() {
                   </Button>
                 </div>
               ) : (
-                <Link href="/login">
-                  <Button>Login</Button>
+                <Link href="/auth">
+                  <Button>Login / Register</Button>
                 </Link>
               )}
             </div>
@@ -108,7 +108,7 @@ export default function Header() {
             <i className="fas fa-sign-out-alt text-xl"></i>
           </button>
         ) : (
-          <Link href="/login">
+          <Link href="/auth">
             <button className="text-gray-500">
               <i className="fas fa-user text-xl"></i>
             </button>

@@ -9,7 +9,17 @@ interface AuthContextType {
   isAdmin: boolean;
   username: string | null;
   login: (username: string, password: string) => Promise<boolean>;
+  register: (userData: UserRegisterData) => Promise<boolean>;
   logout: () => void;
+}
+
+interface UserRegisterData {
+  username: string;
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,6 +74,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
   
+  // Register mutation
+  const registerMutation = useMutation<Response, Error, UserRegisterData>({
+    mutationFn: (userData) => apiRequest('POST', '/api/auth/register', userData),
+    onSuccess: async (res) => {
+      const data = await res.json() as LoginResponse;
+      setUsername(data.username);
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/status'] });
+      
+      toast({
+        title: "Success",
+        description: "Registration successful",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Could not create account",
+        variant: "destructive",
+      });
+    }
+  });
+
   // Logout mutation
   const logoutMutation = useMutation<Response, Error, void>({
     mutationFn: () => apiRequest('POST', '/api/auth/logout'),
@@ -102,6 +134,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
   
+  // Register function
+  const register = async (userData: UserRegisterData) => {
+    try {
+      await registerMutation.mutateAsync(userData);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+  
   // Logout function
   const logout = () => {
     logoutMutation.mutate();
@@ -113,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     username,
     login,
+    register,
     logout
   };
   

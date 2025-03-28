@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
-import Login from "@/pages/Login";
+import AuthPage from "@/pages/AuthPage";
 import ProductDetail from "@/pages/ProductDetail";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import Dashboard from "@/pages/admin/Dashboard";
@@ -37,7 +37,7 @@ function Router() {
       }} />
       
       {/* Auth routes */}
-      <Route path="/login" component={Login} />
+      <Route path="/auth" component={AuthPage} />
       
       {/* Admin routes */}
       <Route path="/admin" component={() => (
